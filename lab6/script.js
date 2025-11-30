@@ -1,19 +1,19 @@
 // --- CZĘŚĆ WSPÓLNA I ZADANIE 1 (RLE) ---
 
 const uploadInput = document.getElementById('upload');
-// Elementy z Zadania 1
+// Zmienne zad1
 const canvasRLE = document.getElementById('imageCanvas');
 const compressBtn = document.getElementById('compressBtn');
 const compressionResult = document.getElementById('compressionResult');
 const sizeDifferenceDisplay = document.getElementById('sizeDifference');
 
-// Elementy z Zadania 2
+// Zmienne zad2
 const originalCanvas = document.getElementById('originalCanvas');
 const compressedCanvas = document.getElementById('compressedCanvas');
 const bitSlider = document.getElementById('bitSlider');
 const bitDisplay = document.getElementById('bitDisplay');
 
-// Elementy z Zadania 3 (Histogramy)
+// Zmienne zad3
 const histCanvasR = document.getElementById('histCanvasR');
 const histCanvasG = document.getElementById('histCanvasG');
 const histCanvasB = document.getElementById('histCanvasB');
@@ -35,7 +35,7 @@ if (uploadInput) {
         reader.onload = function(event) {
             const img = new Image();
             img.onload = function() {
-                // SCENARIUSZ 1: Zadanie 1
+                // Scenariusz 1: Zadanie 1
                 if (canvasRLE) {
                     canvasRLE.width = img.width;
                     canvasRLE.height = img.height;
@@ -49,7 +49,7 @@ if (uploadInput) {
                     if(sizeDifferenceDisplay) sizeDifferenceDisplay.innerText = "";
                 }
 
-                // SCENARIUSZ 2 i 3: Zadanie 2 + Histogramy
+                // Scenariusz 2 i 3: Zadanie 2 + Histogramy
                 if (originalCanvas && compressedCanvas) {
                     originalCanvas.width = img.width;
                     originalCanvas.height = img.height;
@@ -70,7 +70,7 @@ if (uploadInput) {
     });
 }
 
-// --- LOGIKA ZADANIA 1: RLE ---
+// -Logika zadanie 1
 if (compressBtn) {
     compressBtn.addEventListener('click', function() {
         if (!pixelData) {
@@ -110,7 +110,7 @@ function compressRLE(data) {
     return runs;
 }
 
-// --- LOGIKA ZADANIA 2: Kompresja Stratna ---
+// Logika zadanie 2
 
 if (bitSlider) {
     bitSlider.addEventListener('input', function() {
@@ -148,40 +148,39 @@ function updateCompression() {
     if (originalSizeDisplay) originalSizeDisplay.textContent = `Rozmiar oryginału (teoretyczny): ${originalSize.toFixed(2)} bajtów`;
     if (compressedSizeDisplay) compressedSizeDisplay.textContent = `Rozmiar po kompresji (teoretyczny): ${compressedSize.toFixed(2)} bajtów`;
 
-    // --- LOGIKA ZADANIA 3: Wywołanie rysowania histogramu ---
-    // Instrukcja [cite: 101] sugeruje analizę zmiany histogramu dla obrazu skompresowanego.
+    // Dla zadania 3
     if (histCanvasR && histCanvasG && histCanvasB) {
         drawHistograms(compressedImageData);
     }
 }
 
-// --- LOGIKA ZADANIA 3: Implementacja histogramu ---
+// Logika zadanie 3
 function drawHistograms(imageData) {
     const ctxR = histCanvasR.getContext('2d');
     const ctxG = histCanvasG.getContext('2d');
     const ctxB = histCanvasB.getContext('2d');
 
-    // 6.1 Krok 1: Inicjalizacja tablic histogramów 
+    // Krok 1: Inicjalizacja tablic histogramów 
     const rHistogram = new Array(256).fill(0);
     const gHistogram = new Array(256).fill(0);
     const bHistogram = new Array(256).fill(0);
 
-    // 6.2 Krok 2: Zliczanie intensywności kolorów [cite: 407-416]
+    // Krok 2: Zliczanie intensywności kolorów
     for (let i = 0; i < imageData.data.length; i += 4) {
         rHistogram[imageData.data[i]]++;     // R
         gHistogram[imageData.data[i + 1]]++; // G
         bHistogram[imageData.data[i + 2]]++; // B
     }
 
-    // 6.3 Krok 3: Czyszczenie kontekstu rysowania (dla każdego osobno) [cite: 420]
+    // Krok 3: Czyszczenie kontekstu rysowania (dla każdego osobno)
     const width = histCanvasR.width;
     const height = histCanvasR.height;
     ctxR.clearRect(0, 0, width, height);
     ctxG.clearRect(0, 0, width, height);
     ctxB.clearRect(0, 0, width, height);
 
-    // 6.4 Krok 4: Normalizacja wartości histogramu 
-    // Znajdź globalne maksimum, aby skala była spójna dla wszystkich kanałów (opcjonalnie można skalować per kanał)
+    // Krok 4: Normalizacja wartości histogramu 
+    // Znajdź globalne maksimum, aby skala była spójna dla wszystkich kanałów
     const maxCount = Math.max(
         Math.max(...rHistogram),
         Math.max(...gHistogram),
@@ -191,8 +190,8 @@ function drawHistograms(imageData) {
     // Zabezpieczenie przed dzieleniem przez 0, jeśli obraz jest pusty/przezroczysty
     const scale = maxCount > 0 ? height / maxCount : 0;
 
-    // 6.5 Krok 5: Rysowanie słupków histogramu 
-    // Zmodyfikowano, aby rysować na osobnych canvasach zgodnie z życzeniem użytkownika
+    // Krok 5: Rysowanie słupków histogramu 
+    // Rysowanie kazdego kanału na osobnym canvasie
     for (let i = 0; i < 256; i++) {
         const rHeight = rHistogram[i] * scale;
         const gHeight = gHistogram[i] * scale;
