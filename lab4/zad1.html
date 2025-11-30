@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Zadanie 1.1 - Kształty</title>
+    <style>
+        canvas { border: 1px solid #000; }
+    </style>
+</head>
+<body>
+    <canvas id="myCanvas" width="640" height="480"></canvas>
+
+    <script>
+        // Pobranie elementu canvas i kontekstu 2D
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 1. Pusty kwadrat - strokeRect()
+        ctx.strokeStyle = "black";
+        ctx.strokeRect(50, 50, 100, 100);
+
+        // 2. Wypełniony czerwony okrąg - arc(), fill(), fillStyle "red"
+        ctx.beginPath(); // Rozpoczęcie ścieżki
+        ctx.fillStyle = "red"; // Użycie nazwy koloru
+        // Rysowanie łuku/okręgu (x, y, promień, kąt start, kąt stop)
+        ctx.arc(250, 100, 50, 0, 2 * Math.PI);
+        ctx.fill(); // Wypełnienie
+
+        // 3. Trójkąt z gradientem (czarny -> zielony)
+        // Utworzenie gradientu liniowego
+        const gradient = ctx.createLinearGradient(400, 50, 500, 150);
+        gradient.addColorStop(0, "black"); // Początek gradientu
+        gradient.addColorStop(1, "rgb(0, 128, 0)"); // Koniec gradientu, użycie rgb()
+
+        ctx.fillStyle = gradient; // Ustawienie gradientu jako wypełnienia
+        
+        ctx.beginPath();
+        ctx.moveTo(400, 50);  // Wierzchołek 1
+        ctx.lineTo(500, 150); // Wierzchołek 2
+        ctx.lineTo(400, 150); // Wierzchołek 3
+        ctx.closePath();      // Zamknięcie ścieżki
+        ctx.fill();           // Wypełnienie trójkąta
+    </script>
+</body>
+</html>

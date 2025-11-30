@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Zadanie 1.5 - Kamerka</title>
+    <style>
+        video, canvas { border: 1px solid #000; display: block; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <video id="webcamVideo" width="640" height="480" autoplay></video>
+    <button id="captureBtn">Przechwyć obraz</button>
+    
+    <canvas id="photoCanvas" width="640" height="480"></canvas>
+    <button id="saveBtn">Zapisz przechwycony obraz (PNG)</button>
+
+    <script>
+        const video = document.getElementById('webcamVideo');
+        const canvas = document.getElementById('photoCanvas');
+        const context = canvas.getContext('2d');
+
+        // Uzyskanie dostępu do kamerki
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                video.srcObject = stream; // Przypisanie strumienia do wideo
+            })
+            .catch(function(error) {
+                console.error("Błąd dostępu do kamery:", error);
+            });
+
+        // Przechwycenie obrazu z wideo na canvas
+        document.getElementById('captureBtn').addEventListener('click', function() {
+            // Rysuje aktualną klatkę wideo na canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        });
+
+        // Zapis obrazu z canvas do pliku (analogicznie do Zadania 1.4) 
+        document.getElementById('saveBtn').addEventListener('click', function() {
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = 'kamera.png';
+            link.click();
+        });
+    </script>
+</body>
+</html>

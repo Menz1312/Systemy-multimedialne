@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Zadanie 1.3 i 1.4 - Tablet i Zapis</title>
+    <style>
+        canvas { border: 1px solid #000; touch-action: none; /* Wyłącza przewijanie dotykiem */ }
+    </style>
+</head>
+<body>
+    <canvas id="tabletCanvas" width="640" height="480"></canvas>
+    <br>
+    <button id="savePng">Zapisz jako PNG</button>
+    <button id="saveJpg">Zapisz jako JPG</button>
+
+    <script>
+        const canvas = document.getElementById('tabletCanvas');
+        const context = canvas.getContext('2d');
+
+        // Ustaw tło canvas na białe
+        context.fillStyle = "white";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        let drawing = false;
+
+        // Rozpoczęcie rysowania (Pointer Events)
+        canvas.addEventListener('pointerdown', (e) => {
+            drawing = true;
+            canvas.setPointerCapture(e.pointerId);
+        });
+
+        // Zatrzymanie rysowania
+        canvas.addEventListener('pointerup', (e) => {
+            drawing = false;
+            canvas.releasePointerCapture(e.pointerId);
+            context.beginPath(); // Reset ścieżki
+        });
+
+        // Rysowanie z uwzględnieniem nacisku
+        canvas.addEventListener('pointermove', (event) => {
+            if (!drawing) return;
+            event.preventDefault(); // Zapobiega domyślnym akcjom (np. scroll)
+
+            const x = event.clientX - canvas.offsetLeft;
+            const y = event.clientY - canvas.offsetTop;
+            const pressure = event.pressure; // Wartość od 0 do 1
+
+            // Wielkość i kolor zależne od nacisku
+            const size = pressure * 20; // Skalowanie wielkości punktu
+            // Ustawienie koloru i przezroczystości
+            context.fillStyle = `rgba(0, 0, 0, ${pressure})`; 
+
+            // Rysowanie kropki (okręgu)
+            context.beginPath();
+            context.arc(x, y, size, 0, Math.PI * 2);
+            context.fill();
+        });
+
+        // Funkcja zapisu do pliku
+        function saveImage(format) {
+            // Konwersja canvas do DataURL
+            const dataUrl = canvas.toDataURL(format);
+            
+            // Utworzenie tymczasowego linku do pobrania
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            // Ustalenie rozszerzenia pliku
+            const ext = format === 'image/jpeg' ? 'jpg' : 'png';
+            link.download = `rysunek.${ext}`; // Nazwa pliku
+            link.click(); // Symulacja kliknięcia
+        }
+
+        // Obsługa przycisków
+        document.getElementById('savePng').addEventListener('click', () => saveImage('image/png'));
+        document.getElementById('saveJpg').addEventListener('click', () => saveImage('image/jpeg'));
+    </script>
+</body>
+</html>

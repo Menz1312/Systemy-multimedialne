@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>zad1</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Kompresja bezstratna obrazu - RLE</h1>
+<input type="file" id="upload" accept="image/*">
+<br><br>
+<canvas id="imageCanvas"></canvas>
+<br><br>
+<button id="compressBtn">Kompresuj obraz</button>
+<p id="compressionResult"></p>
+<p id="originalSize"></p>
+<p id="compressedSize"></p>
+<p id="sizeDifference"></p>
+
+<script src="script.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>zad3</title>
+    <style> canvas { border: 2px solid black; } </style>
+</head>
+<body>
+    <h1>Wczytywanie obrazu do canvas</h1>
+    
+    <p>Wczytaj obraz z pliku lokalnego:</p>
+    <input type="file" id="fileInput" accept="image/*">
+    
+    <p>Wczytaj obraz z URL:</p>
+    <input type="text" id="urlInput" placeholder="Wprowadź URL obrazu">
+    <button id="loadImageBtn">Wczytaj obraz</button>
+    <br><br>
+    
+    <canvas id="canvas" width="500" height="500"></canvas>
+
+    <button onclick="applyConvolution(sobelKernel)">Filtr Sobela (Krawędzie)</button>
+    <button onclick="applyConvolution(gaussianKernel)">Filtr Gaussian (Rozmycie)</button>
+    <button onclick="applyConvolution(sharpenKernel)">Filtr Wyostrzający</button>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const fileInput = document.getElementById('fileInput');
+        const urlInput = document.getElementById('urlInput');
+        const loadImageBtn = document.getElementById('loadImageBtn');
+
+        // Deklaracja zmiennej globalnej na dane pikseli
+        let originalImageData = null;
+
+        // Funkcja rysująca i skalująca obraz
+        function drawImageOnCanvas(image) {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            const scale = Math.min(canvas.width / image.width, canvas.height / image.height);
+            const newWidth = image.width * scale;
+            const newHeight = image.height * scale;
+
+            const x = (canvas.width - newWidth) / 2;
+            const y = (canvas.height - newHeight) / 2;
+
+            context.drawImage(image, x, y, newWidth, newHeight); 
+
+            // Pobranie danych nowego obrazu do pamięci
+            originalImageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        }
+
+        // Obsługa wczytywania z pliku
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const image = new Image();
+                    image.onload = function() {
+                        drawImageOnCanvas(image);
+                    };
+                    image.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Obsługa wczytywania z URL
+        loadImageBtn.addEventListener('click', function() {
+            const imageUrl = urlInput.value;
+            const image = new Image();
+            image.crossOrigin = "anonymous"; // Ważne dla CORS
+            image.onload = function() {
+                drawImageOnCanvas(image);
+            };
+            image.onerror = function() {
+                alert('Nie udało się wczytać obrazu. Sprawdź poprawność URL lub ustawienia CORS serwera.');
+            };
+            image.src = imageUrl;
+        });
+
+        // Definicje Kerneli
+        const sobelKernel = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+        const gaussianKernel = [1/16, 2/16, 1/16, 2/16, 4/16, 2/16, 1/16, 2/16, 1/16];
+        const sharpenKernel = [0, -1, 0, -1, 5, -1, 0, -1, 0];
+
+        // Funkcja splotu
+        function applyConvolution(kernel) {
+            // Zabezpieczenie: jeśli nie ma obrazu, nic nie rób
+            if (!originalImageData) {
+                alert("Najpierw wczytaj obraz!");
+                return;
+            }
+            
+            // Tworzymy kopię danych, aby wynik zapisać na czysto
+            const imageData = context.createImageData(originalImageData);
+            const width = originalImageData.width;
+            const height = originalImageData.height;
+            const data = originalImageData.data; // Pobieramy dane z ORYGINAŁU (niezmienione)
+            const newData = imageData.data;
+            
+            const side = Math.round(Math.sqrt(kernel.length));
+            const halfSide = Math.floor(side / 2);
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let r = 0, g = 0, b = 0;
+                    
+                    for (let kernelY = 0; kernelY < side; kernelY++) {
+                        for (let kernelX = 0; kernelX < side; kernelX++) {
+                            const pixelY = Math.min(height - 1, Math.max(0, y + kernelY - halfSide));
+                            const pixelX = Math.min(width - 1, Math.max(0, x + kernelX - halfSide));
+                            
+                            const pixelIndex = (pixelY * width + pixelX) * 4;
+                            const kernelValue = kernel[kernelY * side + kernelX];
+                            
+                            r += data[pixelIndex] * kernelValue;
+                            g += data[pixelIndex + 1] * kernelValue;
+                            b += data[pixelIndex + 2] * kernelValue;
+                        }
+                    }
+
+                    const newIndex = (y * width + x) * 4;
+                    newData[newIndex] = Math.min(Math.max(r, 0), 255);
+                    newData[newIndex + 1] = Math.min(Math.max(g, 0), 255);
+                    newData[newIndex + 2] = Math.min(Math.max(b, 0), 255);
+                    newData[newIndex + 3] = data[newIndex + 3];
+                }
+            }
+            context.putImageData(imageData, 0, 0);
+        }
+    </script>
+</body>
+</html>

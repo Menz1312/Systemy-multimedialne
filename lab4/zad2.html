@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Zadanie 1.2 - Rysowanie Myszką</title>
+    <style>
+        canvas { border: 1px solid #000; }
+    </style>
+</head>
+<body>
+    <canvas id="drawingCanvas" width="640" height="480"></canvas>
+
+    <script>
+        const canvas = document.getElementById('drawingCanvas');
+        const context = canvas.getContext('2d');
+        
+        let drawing = false; // Zmienna logiczna śledząca stan rysowania
+
+        // Rozpoczęcie rysowania po wciśnięciu przycisku
+        canvas.addEventListener('mousedown', (e) => {
+            drawing = true;
+            context.beginPath(); // Reset ścieżki, aby nie łączyć z poprzednimi liniami
+            // Przesunięcie do aktualnej pozycji myszki
+            context.moveTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+        });
+
+        // Zakończenie rysowania po puszczeniu przycisku
+        canvas.addEventListener('mouseup', () => {
+            drawing = false;
+        });
+
+        // Rysowanie w trakcie ruchu myszką
+        canvas.addEventListener('mousemove', (event) => {
+            if (!drawing) return; // Jeśli nie rysujemy, przerwij funkcję
+
+            // Ustalenie stylu linii
+            context.lineWidth = 5;
+            context.lineCap = 'round';
+            context.strokeStyle = 'black';
+
+            // Rysowanie linii do aktualnej pozycji kursora
+            // Wyliczenie pozycji względem canvas (clientX - offsetLeft)
+            context.lineTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
+            context.stroke(); // Wykonanie obrysu
+            
+            // Płynność rysowania: rozpoczęcie nowej ścieżki od ostatniego punktu
+            context.beginPath();
+            context.moveTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
+        });
+    </script>
+</body>
+</html>

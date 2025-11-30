@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>zad2</title>
+    <style> canvas { border: 2px solid black; } </style>
+</head>
+<body>
+    <h1>Wczytywanie obrazu do canvas</h1>
+    
+    <p>Wczytaj obraz z pliku lokalnego:</p>
+    <input type="file" id="fileInput" accept="image/*">
+    
+    <p>Wczytaj obraz z URL:</p>
+    <input type="text" id="urlInput" placeholder="Wprowadź URL obrazu">
+    <button id="loadImageBtn">Wczytaj obraz</button>
+    <br><br>
+    
+    <canvas id="canvas" width="500" height="500"></canvas>
+
+    <p>Jasność: <input type="range" id="brightnessRange" min="-100" max="100" value="0"></p>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const fileInput = document.getElementById('fileInput');
+        const urlInput = document.getElementById('urlInput');
+        const loadImageBtn = document.getElementById('loadImageBtn');
+
+        // Funkcja rysująca i skalująca obraz
+        function drawImageOnCanvas(image) {
+            context.clearRect(0, 0, canvas.width, canvas.height); // Wyczyszczenie canvas
+
+            // Obliczenie współczynnika skalowania (zachowanie proporcji)
+            const scale = Math.min(canvas.width / image.width, canvas.height / image.height);
+            
+            // Obliczenie nowych wymiarów
+            const newWidth = image.width * scale;
+            const newHeight = image.height * scale;
+
+            // Wyśrodkowanie obrazu
+            const x = (canvas.width - newWidth) / 2;
+            const y = (canvas.height - newHeight) / 2;
+
+            context.drawImage(image, x, y, newWidth, newHeight); // Rysowanie
+        }
+
+        // Obsługa wczytywania z pliku
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) { //
+                    const image = new Image();
+                    image.onload = function() {
+                        drawImageOnCanvas(image);
+                    };
+                    image.src = e.target.result; //
+                };
+                reader.readAsDataURL(file); //
+            }
+        });
+
+        // Obsługa wczytywania z URL
+        loadImageBtn.addEventListener('click', function() {
+            const imageUrl = urlInput.value;
+            const image = new Image();
+            image.crossOrigin = "anonymous"; //
+            image.onload = function() {
+                drawImageOnCanvas(image);
+            };
+            image.onerror = function() { // Obsługa błędów
+                alert('Nie udało się wczytać obrazu. Sprawdź poprawność URL.');
+            };
+            image.src = imageUrl;
+        });
+
+        let originalImageData = null; // Przechowywanie oryginału
+
+        // Modyfikacja funkcji drawImageOnCanvas z zadania wstępnego, aby zapisać oryginał
+        const oldDraw = drawImageOnCanvas; 
+        drawImageOnCanvas = function(image) {
+            oldDraw(image);
+            // Zapisanie stanu początkowego po narysowaniu
+            originalImageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        };
+
+        // Funkcja zmiany jasności
+        function adjustBrightness(brightnessValue) {
+            if (!originalImageData) return;
+
+            // Tworzymy kopię danych, aby nie nadpisywać oryginału trwale
+            const imageData = context.createImageData(originalImageData);
+            const data = originalImageData.data;
+            const newData = imageData.data;
+
+            const val = parseInt(brightnessValue); // Wartość z suwaka
+
+            for (let i = 0; i < data.length; i += 4) {
+                // Dodanie wartości i ograniczenie do zakresu 0-255
+                newData[i] = Math.min(Math.max(data[i] + val, 0), 255);     // R
+                newData[i+1] = Math.min(Math.max(data[i+1] + val, 0), 255); // G
+                newData[i+2] = Math.min(Math.max(data[i+2] + val, 0), 255); // B
+                newData[i+3] = data[i+3]; // A (bez zmian) [cite: 304]
+            }
+
+            context.putImageData(imageData, 0, 0);
+        }
+
+        // Nasłuchiwanie zmian suwaka
+        document.getElementById('brightnessRange').addEventListener('input', function(e) {
+            adjustBrightness(e.target.value);
+        });
+    </script>
+</body>
+</html>

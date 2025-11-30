@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rejestrator dźwięku z różnymi parametrami</title>
+</head>
+<body>
+  <h1>Rejestrator dźwięku</h1>
+  
+  <!-- Parametry dźwięku -->
+  <div>
+    <label for="sampleRate">Sample Rate (Hz):</label>
+    <input type="number" id="sampleRate" value="44100" step="1000" min="8000" max="96000">
+  </div>
+  <!-- Dodany wybór liczby bitów na próbkę -->
+  <div>
+    <label for="bitDepth">Bit Depth:</label>
+    <select id="bitDepth">
+      <option value="8">8 bit</option>
+      <option value="16" selected>16 bit</option>
+      <option value="24">24 bit</option>
+    </select>
+  </div>
+
+  <!-- Dodany wybór liczby kanałów -->
+  <div>
+    <label for="channels">Channels:</label>
+    <select id="channels">
+      <option value="1">mono</option>
+      <option value="2" selected>stereo</option>
+    </select>
+  </div>
+
+  <!-- Przyciski do nagrywania -->
+  <button id="startBtn">Start Recording</button>
+  <button id="stopBtn" disabled>Stop Recording</button>
+
+  <!-- Dodany link do pobierania -->
+  <a id="downloadLink" href="#" style="display: none; margin-top: 20px;">Download Recording</a>
+
+  <script>
+    let mediaRecorder;
+    let audioChunks = [];
+    let audioContext;
+
+    document.getElementById('startBtn').addEventListener('click', async () => {
+      console.log("Starting recording...");
+
+      // Pobranie parametrów od użytkownika
+      const sampleRate = parseInt(document.getElementById('sampleRate').value);
+      // Dodano pobieranie liczby kanałów i bitów na próbkę
+      const bitDepth = parseInt(document.getElementById('bitDepth').value);
+      const channels = parseInt(document.getElementById('channels').value);
+
+      // Zainicjowanie kontekstu audio z wybraną częstotliwością próbkowania
+      audioContext = new AudioContext({ sampleRate: sampleRate });
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+
+      audioChunks = []; //Czyszczenie audioChunks - bez tego kolejne nagranie było dopisywane do poprzedniego
+
+      mediaRecorder.ondataavailable = event => {
+        audioChunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        console.log("Recording stopped.");
+        
+        const audioBlob = new Blob(audioChunks, { type: 'audio/ogg; codecs=opus' });
+        
+        // Konwersja do WAV i udostępnienie do pobrania
+        const reader = new FileReader();
+        reader.onload = function() {
+          // Dekodowanie danych audio z Blob
+          audioContext.decodeAudioData(reader.result, function(audioBuffer) { 
+            // Konwersja do WAV z wykorzystaniem udostępnionej funkcji
+            const wavBlob = audioBufferToWavBlob(audioBuffer, bitDepth, channels);
+            console.log("Generating WAV file...");
+            // Utworzenie obiektu URL dla pliku WAV
+            const audioUrl = URL.createObjectURL(wavBlob);
+            
+            // Pokazanie linku do pobrania
+            const downloadLink = document.getElementById('downloadLink');
+            downloadLink.href = audioUrl;
+            downloadLink.download = 'recording.wav';
+            downloadLink.style.display = 'block';
+          });
+        };
+        reader.readAsArrayBuffer(audioBlob);
+      };
+
+      mediaRecorder.start();
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('stopBtn').disabled = false;
+    });
+
+    document.getElementById('stopBtn').addEventListener('click', () => {
+      console.log("Stopping recording...");
+      mediaRecorder.stop();
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('stopBtn').disabled = true;
+    });
+
+    function audioBufferToWavBlob(audioBuffer, bitDepth = 16, channels = 2) {
+        const numOfChan = channels;
+        const length = audioBuffer.length * numOfChan * (bitDepth / 8);
+        const buffer = new ArrayBuffer(44 + length);
+        const view = new DataView(buffer);
+
+        const writeString = (view, offset, string) => {
+            for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        };
+
+        // WAV header
+        writeString(view, 0, 'RIFF'); 
+        view.setUint32(4, 36 + length, true); 
+        writeString(view, 8, 'WAVE'); 
+        writeString(view, 12, 'fmt '); 
+        view.setUint32(16, 16, true); 
+        view.setUint16(20, 1, true); 
+        view.setUint16(22, numOfChan, true); 
+        view.setUint32(24, audioBuffer.sampleRate, true); 
+        view.setUint32(28, audioBuffer.sampleRate * numOfChan * (bitDepth / 8), true); 
+        view.setUint16(32, numOfChan * (bitDepth / 8), true); 
+        view.setUint16(34, bitDepth, true); 
+        writeString(view, 36, 'data'); 
+        view.setUint32(40, length, true);
+
+        const interleaved = interleaveChannels(audioBuffer, numOfChan);
+        let pos = 44;  // Inicjalizacja zmiennej `pos`
+
+        if (bitDepth === 16) {
+            for (let i = 0; i < interleaved.length; i++, pos += 2) {
+            view.setInt16(pos, interleaved[i] * 0x7FFF, true);
+            }
+        } else if (bitDepth === 8) {
+            for (let i = 0; i < interleaved.length; i++, pos++) {
+            view.setInt8(pos, interleaved[i] * 127);
+            }
+        } else if (bitDepth === 24) {
+            for (let i = 0; i < interleaved.length; i++, pos += 3) {
+            const sample = Math.floor(interleaved[i] * 0x7FFFFF);
+            view.setUint8(pos, (sample >> 0) & 0xFF);
+            view.setUint8(pos + 1, (sample >> 8) & 0xFF);
+            view.setUint8(pos + 2, (sample >> 16) & 0xFF);
+            }
+        }
+
+        return new Blob([view], { type: 'audio/wav' });
+    }
+
+    function interleaveChannels(audioBuffer, numOfChan) {
+      const channels = [];
+      for (let i = 0; i < numOfChan; i++) {
+        channels.push(audioBuffer.getChannelData(i));
+      }
+      const length = audioBuffer.length * numOfChan;
+      const interleaved = new Float32Array(length);
+      let index = 0;
+
+      for (let i = 0; i < audioBuffer.length; i++) {
+        for (let j = 0; j < numOfChan; j++) {
+          interleaved[index++] = channels[j][i];
+        }
+      }
+      return interleaved;
+    }
+  </script>
+</body>
+</html>

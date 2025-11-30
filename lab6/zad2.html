@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kompresja Stratna i Histogram</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            margin-bottom: 10px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+        .canvas-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .histograms {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .hist-box {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Kompresja stratna obrazu i analiza histogramu</h1>
+<input type="file" id="upload" accept="image/*">
+<br><br>
+
+<label for="bitSlider">Liczba bitów na kanał (1-8): </label>
+<input type="range" id="bitSlider" min="1" max="8" value="8" step="1">
+<span id="bitDisplay">8</span>
+
+<br><br>
+
+<div class="container">
+    <div class="canvas-wrapper">
+        <h3>Oryginał</h3>
+        <canvas id="originalCanvas"></canvas>
+        <p id="originalSize"></p>
+    </div>
+
+    <div class="canvas-wrapper">
+        <h3>Po kompresji</h3>
+        <canvas id="compressedCanvas"></canvas>
+        <p id="compressedSize"></p>
+    </div>
+</div>
+
+<hr>
+<h2>Histogram (obraz po kompresji)</h2>
+<div class="histograms">
+    <div class="hist-box">
+        <h4>Kanał R (Czerwony)</h4>
+        <canvas id="histCanvasR" width="256" height="150"></canvas>
+    </div>
+    <div class="hist-box">
+        <h4>Kanał G (Zielony)</h4>
+        <canvas id="histCanvasG" width="256" height="150"></canvas>
+    </div>
+    <div class="hist-box">
+        <h4>Kanał B (Niebieski)</h4>
+        <canvas id="histCanvasB" width="256" height="150"></canvas>
+    </div>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>

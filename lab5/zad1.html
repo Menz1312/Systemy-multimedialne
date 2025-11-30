@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>zad1</title>
+    <style> canvas { border: 2px solid black; } </style>
+</head>
+<body>
+    <h1>Wczytywanie obrazu do canvas</h1>
+    
+    <p>Wczytaj obraz z pliku lokalnego:</p>
+    <input type="file" id="fileInput" accept="image/*">
+    
+    <p>Wczytaj obraz z URL:</p>
+    <input type="text" id="urlInput" placeholder="Wprowadź URL obrazu">
+    <button id="loadImageBtn">Wczytaj obraz</button>
+    <br><br>
+    
+    <canvas id="canvas" width="500" height="500"></canvas>
+
+    <button id="grayscaleBtn">Konwertuj na odcienie szarości</button>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const fileInput = document.getElementById('fileInput');
+        const urlInput = document.getElementById('urlInput');
+        const loadImageBtn = document.getElementById('loadImageBtn');
+
+        // Funkcja rysująca i skalująca obraz
+        function drawImageOnCanvas(image) {
+            context.clearRect(0, 0, canvas.width, canvas.height); // Wyczyszczenie canvas
+
+            // Obliczenie współczynnika skalowania (zachowanie proporcji)
+            const scale = Math.min(canvas.width / image.width, canvas.height / image.height);
+            
+            // Obliczenie nowych wymiarów
+            const newWidth = image.width * scale;
+            const newHeight = image.height * scale;
+
+            // Wyśrodkowanie obrazu
+            const x = (canvas.width - newWidth) / 2;
+            const y = (canvas.height - newHeight) / 2;
+
+            context.drawImage(image, x, y, newWidth, newHeight); // Rysowanie
+        }
+
+        // Obsługa wczytywania z pliku
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) { //
+                    const image = new Image();
+                    image.onload = function() {
+                        drawImageOnCanvas(image);
+                    };
+                    image.src = e.target.result; //
+                };
+                reader.readAsDataURL(file); //
+            }
+        });
+
+        // Obsługa wczytywania z URL
+        loadImageBtn.addEventListener('click', function() {
+            const imageUrl = urlInput.value;
+            const image = new Image();
+            image.crossOrigin = "anonymous"; //
+            image.onload = function() {
+                drawImageOnCanvas(image);
+            };
+            image.onerror = function() { // Obsługa błędów
+                alert('Nie udało się wczytać obrazu. Sprawdź poprawność URL.');
+            };
+            image.src = imageUrl;
+        });
+
+        // Funkcja konwersji na szarość
+        function convertToGrayscale() {
+            // Pobranie danych pikseli
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            // Iteracja po pikselach (co 4 wartości: R, G, B, A)
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                // Obliczenie jasności wg wzoru luminancji
+                // Gray = 0.299*R + 0.587*G + 0.114*B
+                const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                // Przypisanie nowej wartości do kanałów R, G, B
+                data[i] = gray;
+                data[i + 1] = gray;
+                data[i + 2] = gray;
+                // data[i+3] (Alpha) pozostaje bez zmian
+            }
+
+            // Aktualizacja canvas
+            context.putImageData(imageData, 0, 0);
+        }
+
+        document.getElementById('grayscaleBtn').addEventListener('click', convertToGrayscale);
+    </script>
+</body>
+</html>
