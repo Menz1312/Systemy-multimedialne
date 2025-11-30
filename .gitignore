@@ -4,6 +4,3 @@ ffmpeg/
 # Ignoruj pliki dźwiękowe
 *.wav
 *.mp3
-
-# Jeśli "imp3" to nie była literówka, a specyficzny format, zostaw też to:
-*.imp3
